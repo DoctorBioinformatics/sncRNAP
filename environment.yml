@@ -1,0 +1,43 @@
+# You can use this file to create a conda environment for this pipeline:
+#   conda env create -f environment.yml
+name: nf-core-smrnaseq-1.1.0
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+
+  # bioconda packages
+  - bioconda::trim-galore
+  - bioconda::samtools
+  - bioconda::bowtie
+  - bioconda::multiqc
+  - bioconda::mirtop
+  - bioconda::seqcluster
+  - bioconda::htseq
+  - bioconda::fastqc
+  - bioconda::fastx_toolkit
+  - bioconda::seqkit
+  - bioconda::mirtrace
+  - bioconda::bioconductor-limma
+  - bioconda::bioconductor-edger
+  - bioconda::mirdeep2=2.0.1.2
+  - bioconda::bioconductor-deseq2
+  - bioconda::bioconductor-enhancedvolcano
+
+
+  ## conda-forge packages
+  - conda-forge::r-base
+  - conda-forge::r-statmod
+  - conda-forge::python
+  - conda-forge::r-data.table
+  - conda-forge::r-gplots
+  - conda-forge::r-r.methodss3
+  - conda-forge::r-ggplot2
+  - conda-forge::r-ggrepel
+  - conda-forge::r-rcolorbrewer
+  - conda-forge::markdown
+  - conda-forge::pymdown-extensions
+  - conda-forge::pygments
+  - conda-forge::pigz
+  - conda-forge::biopython
