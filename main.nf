@@ -43,6 +43,7 @@ def helpMessage() {
     Other arguments:
     Species (human/mouse/rat): ${params.species}
     Minimum read length: ${params.min_read_length}
+    CPU: ${params.CPU}
     Print help" ${params.help}
     """
 }
@@ -99,7 +100,7 @@ if (params.genomes && params.genome && !params.genomes.containsKey(params.genome
 }
 
 //CPU usage set to 50%
-CPU_usage=Math.round((Runtime.runtime.availableProcessors()*50)/100)
+CPU_usage = params.CPU ? params.CPU : Math.round((Runtime.runtime.availableProcessors()*50)/100)
 
 ////////////////////////////////////////////////////
 //* --         Channels and Paths          -- *////
