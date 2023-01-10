@@ -7,8 +7,7 @@
 small non-coding RNA identification pipelines often lack the capacity to determine those that are differentially expressed in control vs treated samples.               
 We developed sncRNAP, a Nextflow  pipeline for the detection of novel as well as known differentially expressed ncRNA and miRNAs from sRNAseq datasets.
 
-![Fig2A](https://user-images.githubusercontent.com/82383235/211608814-79172dd2-8453-4e1a-a70e-315907e7b13a.png)
-
+![Fig2A](https://user-images.githubusercontent.com/82383235/211609047-df6e06f8-3fc5-43f0-b8e4-af0984fcd173.png)
 
 ## Authors
 
