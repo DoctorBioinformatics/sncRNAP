@@ -1,7 +1,4 @@
 
-![Logo](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/th5xamgrr6se0x5ro4g6.png)
-
-
 # sncRNAP
 
 small non-coding RNA identification pipelines often lack the capacity to determine those that are differentially expressed in control vs treated samples.               
