@@ -10,7 +10,8 @@ dependencies:
   # bioconda packages
   - bioconda::trim-galore
   - bioconda::samtools
-  - bioconda::bowtie
+  - bioconda::star
+  - conda-forge::openjdk=11
   - bioconda::multiqc
   - bioconda::mirtop
   - bioconda::seqcluster
