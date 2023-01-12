@@ -26,8 +26,8 @@ conda activate sncRNAP_env
 ## Usage/Examples
 Run the following to conduct a group comparison analysis:
 ```javascript
-nextflow run sncRNAP -profile conda --input '*fq.gz' 
---outdir ./Results --genome GRCm38 
+nextflow run sncRNAP -profile conda --input_dir '*fq.gz' 
+--output_dir ./Results --genome human 
 --min_length 15 --trim_galore_max_length 50 
 --mature "https://mirbase.org/ftp/CURRENT/mature.fa.gz" 
 --hairpin "https://mirbase.org/ftp/CURRENT/hairpin.fa.gz" 
