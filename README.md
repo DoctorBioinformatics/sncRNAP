@@ -21,7 +21,7 @@ Run the below code to create a conda environment and install the required tools 
 ```bash
 git clone https://github.com/hesham123457887/sncRNAP.git
 conda env create -f sncRNAP/environment.yml
-conda activate sncRNAP_env
+conda activate sncRNAP
 ```
 ## Usage/Examples
 Run the following to conduct a group comparison analysis:
