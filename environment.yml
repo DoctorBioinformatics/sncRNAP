@@ -1,6 +1,6 @@
 # You can use this file to create a conda environment for this pipeline:
 #   conda env create -f environment.yml
-name: sncRNAP_1.1.0
+name: sncRNAP
 channels:
   - conda-forge
   - bioconda
