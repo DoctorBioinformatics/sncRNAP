@@ -8,15 +8,15 @@ More information can be found at https://github.com/sncRNAP
 //* --             Set defaults           -- *////
 ////////////////////////////////////////////////////
 
-params.genome = 'human'
 params.paired_samples = false
 params.layout = null
 params.input_dir = null
-params.output_dir = "Results"
 params.version = false
 params.help = false
-// params.all_plots = false
-// params.min_read_length = 16
+params.output_dir = "Results"
+params.genome = 'human'
+params.min_length = 16
+params.max_length = 50
 
 ////////////////////////////////////////////////////
 //* --    Print help, version messages     -- *////
@@ -101,28 +101,17 @@ if (!params.genome) {
 }
 
 //CPU usage set to 50%
-CPU_usage=Math.round((Runtime.runtime.availableProcessors()*50)/100)
+CPU_usage = Math.round((Runtime.runtime.availableProcessors()*50)/100)
 
 ////////////////////////////////////////////////////
 //* --         Channels and Paths          -- *////
 ////////////////////////////////////////////////////
 
 // Create a channel for input_dir read files
-if(params.input_dir_paths){
-    Channel
-        .from(params.input_dir_paths)
-        .map { file(it) }
-        .ifEmpty { exit 1, "params.input_dir_paths was empty - no input_dir files supplied" }
-        .into { raw_reads_fastqc; raw_reads_trimgalore; raw_reads_mirtrace }
-} else {
-    Channel
-        .fromPath( params.input_dir )
-        .ifEmpty { exit 1, "Cannot find any reads matching: ${params.input_dir}" }
-        .into { raw_reads_fastqc; raw_reads_trimgalore; raw_reads_mirtrace }
-}
+reads_ch = Channel.fromPath( ["$params.input_dir/*.fastq.gz", "$params.input_dir/*.fq.gz"])
 
 // Create a path for genomeFasta
-params.genomeFasta = "$baseDir/DBs/${params.genome}_tRNAs-and-ncRNAs-and-lookalikes.fa"
+params.genomeFasta = "$baseDir/DBs/${params.genome}_tRNAs-and-ncRNAs-and-lookalikes.fa_exc_miRNA.fa"
 
 // Create a path for adapter sequence
 params.adapter = "$baseDir/adapters_db/adapters.fa"
@@ -135,8 +124,12 @@ novel_layout_channel=Channel.fromPath(["$params.layout"])
 //* --            Preprocessing             -- *////
 ////////////////////////////////////////////////////
 
+/*
+ * STEP 1 - Create genome_db
+ */
 process genome_db {
     cpus CPU_usage
+    tag "$fasta"
 
     input:
     path fasta from params.genomeFasta
@@ -159,6 +152,38 @@ process genome_db {
         --genomeChrBinNbits 14 \\
         $memory
     STAR --version | sed -e "s/STAR_//g" > STAR.version.txt
+    """
+}
+
+/*
+ * STEP 2 - Trim Galore!
+ */
+process trim_galore {
+    cpus CPU_usage
+    tag "$reads"
+    publishDir "${params.output_dir}/trim_galore", mode: 'copy'
+
+    input:
+    file reads from reads_ch
+    path adapter from params.adapter
+
+    output:
+    file '*trimming_report.txt' into trimgalore_results
+    file "*_fastqc.{zip,html}" into trimgalore_fastqc_reports
+    file "*adapter_sequence.txt" into adapter_sequence
+
+    script: 
+    """
+    get_adapter.py $reads $adapter  > ${reads}.adapter_sequence.txt
+
+    # get adapter as a string
+    cat ${reads}.adapter_sequence.txt | while read -r F 
+    do
+        echo \$F
+        trim_galore --adapter \$F \\
+        --stringency 10 --length ${params.min_length} \\
+        --max_length ${params.max_length} --gzip $reads --fastqc
+    done
     """
 }
 
