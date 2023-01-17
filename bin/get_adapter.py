@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import sys
 import gzip
+from concurrent.futures import ProcessPoolExecutor
 
 def get_adapter(fastq,db):
     """A function to identify the most abundant adapter sequence in a fastq file."""
@@ -49,4 +50,5 @@ def get_adapter(fastq,db):
 if __name__== '__main__':
     fastq=sys.argv[1]
     db=sys.argv[2]
-    get_adapter(fastq,db)
+    with ProcessPoolExecutor() as executor:
+        executor.submit(get_adapter, fastq, db)
