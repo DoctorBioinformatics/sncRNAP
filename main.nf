@@ -110,6 +110,9 @@ CPU_usage = Math.round((Runtime.runtime.availableProcessors()*50)/100)
 // Create a channel for input_dir read files
 reads_ch = Channel.fromPath( ["$params.input_dir/*.fastq.gz", "$params.input_dir/*.fq.gz"])
 
+// Create a channel for single read file
+// reads_single = reads_ch.sample()
+
 // Create a path for genomeFasta
 params.genomeFasta = "$baseDir/DBs/${params.genome}_tRNAs-and-ncRNAs-and-lookalikes.fa_exc_miRNA.fa"
 
