@@ -3,11 +3,9 @@
 sncRNAP is a pipeline that can be used for analyzing smallRNAseq datasets
 More information can be found at https://github.com/sncRNAP
 */
-
 ////////////////////////////////////////////////////
 //* --             Set defaults           -- *////
 ////////////////////////////////////////////////////
-
 params.paired_samples = false
 params.layout = null
 params.input_dir = null
@@ -17,11 +15,9 @@ params.output_dir = "Results"
 params.genome = 'human'
 params.min_length = 16
 params.max_length = 50
-
 ////////////////////////////////////////////////////
 //* --    Print help, version messages     -- *////
 ////////////////////////////////////////////////////
-
 def helpMessage() {
     log.info """\
     
@@ -69,11 +65,9 @@ if (params.version) {
     versionMessage()
     exit 0
 }
-
 ////////////////////////////////////////////////////
 //* --         Validate parameters         -- *////
 ////////////////////////////////////////////////////
-
 // input_dir parameter
 if(!params.input_dir){
     exit 1, "Error: No input_dir provided. Provide --input_dir to pipeline"
@@ -102,16 +96,17 @@ if (!params.genome) {
 
 //CPU usage set to 50%
 CPU_usage = Math.round((Runtime.runtime.availableProcessors()*50)/100)
-
 ////////////////////////////////////////////////////
 //* --         Channels and Paths          -- *////
 ////////////////////////////////////////////////////
-
 // Create a channel for input_dir read files
 reads_ch = Channel.fromPath( ["$params.input_dir/*.fastq.gz", "$params.input_dir/*.fq.gz"])
 
-// Create a channel for single read file
-// reads_single = reads_ch.sample()
+// Create a channel to read only a single fastq file from the input directory
+import java.nio.file.*
+all_files = Files.list(Paths.get("$params.input_dir")).toList()
+random_index = Math.floor(Math.random() * all_files.size()).toInteger()
+reads_single = all_files.get(random_index)
 
 // Create a path for genomeFasta
 params.genomeFasta = "$baseDir/DBs/${params.genome}_tRNAs-and-ncRNAs-and-lookalikes.fa_exc_miRNA.fa"
@@ -122,11 +117,9 @@ params.adapter = "$baseDir/adapters_db/adapters.fa"
 // Create a path for layout file
 layout_channel = Channel.fromPath(["$params.layout"])
 novel_layout_channel=Channel.fromPath(["$params.layout"])
-
 ////////////////////////////////////////////////////
 //* --            Preprocessing             -- *////
 ////////////////////////////////////////////////////
-
 /*
  * STEP 1 - Create genome_db
  */
@@ -159,7 +152,27 @@ process genome_db {
 }
 
 /*
- * STEP 2 - Trim Galore!
+ * STEP 2 - Get Adapter Sequence
+ */
+process get_adapter {
+    cpus CPU_usage
+    tag "$read"
+
+    input:
+    file read from reads_single
+    path adapter from params.adapter
+
+    output:
+    file "adapter_sequence.txt" into adapter_sequence
+
+    script: 
+    """
+    get_adapter.py $read $adapter  > adapter_sequence.txt
+    """
+}
+
+/*
+ * STEP 3 - Trim Galore
  */
 process trim_galore {
     cpus CPU_usage
@@ -168,19 +181,16 @@ process trim_galore {
 
     input:
     file reads from reads_ch
-    path adapter from params.adapter
+    file adapter from adapter_sequence
 
     output:
     file '*trimming_report.txt' into trimgalore_results
     file "*_fastqc.{zip,html}" into trimgalore_fastqc_reports
-    file "*adapter_sequence.txt" into adapter_sequence
 
     script: 
     """
-    get_adapter.py $reads $adapter  > ${reads}.adapter_sequence.txt
-
-    # get adapter as a string
-    cat ${reads}.adapter_sequence.txt | while read -r F 
+    # read adapter file as a string and run trim_galore
+    cat $adapter| while read -r F 
     do
         echo \$F
         trim_galore --adapter \$F \\
@@ -189,7 +199,10 @@ process trim_galore {
     done
     """
 }
-
 ////////////////////////////////////////////////////
 //* --              Processes              -- *////
 ////////////////////////////////////////////////////
+
+
+
+
