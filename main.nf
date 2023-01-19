@@ -131,13 +131,12 @@ process genome_db {
     path fasta from params.genomeFasta
 
     output:
-    path "star_db", emit: star_index
+    path "star_db" into genome_db_ch
 
     script:
     def memory  = task.memory ? "--limitGenomeGenerateRAM ${task.memory.toBytes() - 100000000}" : ''
     """
     echo $memory
-    mkdir -p star_db
     STAR \\
         --runMode genomeGenerate \\
         --genomeDir star_db/ \\
@@ -186,6 +185,7 @@ process trim_galore {
     output:
     file '*trimming_report.txt' into trimgalore_results
     file "*_fastqc.{zip,html}" into trimgalore_fastqc_reports
+    file '*.gz' into trimmed_reads
 
     script: 
     """
@@ -202,7 +202,40 @@ process trim_galore {
 ////////////////////////////////////////////////////
 //* --              Processes              -- *////
 ////////////////////////////////////////////////////
+/*
+ * STEP 4 - STAR Mapping
+ */
+process STAR_Mapping {
+    cpus CPU_usage
+    tag "$trimmed"
 
+    input:
+    file trimmed from trimmed_reads
+    path star_db from genome_db_ch
 
+    output:
+    path("*Aligned.out.bam"), emit: bam
+    path("*Log.final.out"), emit: log_final
+    path("*_Stats.log"), emit: sam_stats
 
+    script:
+    """
+    STAR \\
+        --genomeDir ${star_db} \\
+        --readFilesIn ${trimmed} \\
+        --runThreadN ${task.cpus} \\
+        --outSAMattributes AS nM HI NH \\
+        --outFilterMultimapScoreRange 0 \\
+        --outFilterMatchNmin ${params.min_length} \\
+        --outFileNamePrefix ${trimmed}_ \\
+        --readFilesCommand zcat
+    grep 'Number of input reads' ${trimmed}_Log.final.out \\
+        | sed -r 's/\\s+//g' \\
+        | awk -F '|' '{print \$2}' \\
+        > ${trimmed}_Stats.log
+    echo ' reads; of these:' >> ${trimmed}_Stats.log
+    samtools view -bS ${trimmed}_Aligned.out.sam > ${trimmed}_Aligned.out.bam
+    rm ${trimmed}_Aligned.out.sam
+    """
+}
 
