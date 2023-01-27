@@ -1,21 +1,24 @@
 #!/usr/bin/env Rscript
 if (!require("data.table")){
-  install.packages("data.table", dependencies=TRUE, repos='http://cloud.r-project.org/')
+  install.packages("data.table", dependencies=TRUE)
   library("data.table")
 }
-
 if (!require("reshape2")) {
-  install.packages("reshape2", dependencies=TRUE, repos='http://cloud.r-project.org/')
+  install.packages("reshape2", dependencies=TRUE)
   library("reshape2")
 }
 if (!require("writexl")) {
-  install.packages("writexl", dependencies=TRUE, repos='http://cloud.r-project.org/')
+  install.packages("writexl", dependencies=TRUE)
   library("writexl")
 }
 if (!require("readxl")) {
-  install.packages("readxl", dependencies=TRUE, repos='http://cloud.r-project.org/')
+  install.packages("readxl", dependencies=TRUE)
   library("readxl")
 }
+if (!require("dplyr")) {
+  install.packages("dplyr", dependencies = TRUE, repos='http://cloud.r-project.org/')
+}
+
 suppressMessages(library(DESeq2))
 
 suppressMessages(library(dplyr))
@@ -267,4 +270,3 @@ width <- 6
 height <- 6
 pca_plot_name=paste0(base_level,"_vs_",level_to_compare,"_PCA_plot.pdf", sep="")
 ggsave(pca_plot_name, pca_plot, width = width, height = height)
-
