@@ -116,7 +116,8 @@ params.genomeFasta = "$baseDir/DBs/${params.genome}_tRNAs-and-ncRNAs-and-lookali
 params.adapter = "$baseDir/adapters_db/adapters.fa"
 
 // Create a path for layout file
-layout_channel = Channel.fromPath(["$params.layout"])
+non_mirna_layout_channel = Channel.fromPath(["$params.layout"])
+mirna_layout_channel = Channel.fromPath(["$params.layout"])
 novel_layout_channel=Channel.fromPath(["$params.layout"])
 ////////////////////////////////////////////////////
 //* --            Preprocessing             -- *////
@@ -274,9 +275,9 @@ process read_collapse {
 //* --              Processes              -- *////
 ////////////////////////////////////////////////////
 /*
- * STEP 6 - STAR non_miRNA_Mapping
+ * STEP 6.1 - STAR non_miRNA_Mapping
  */
-process star_non_miRNA {
+process non_miRNA_star {
     cpus CPU_usage
     tag "$reads"
 
@@ -310,7 +311,7 @@ process star_non_miRNA {
 }
 
 /*
- * STEP 7 - Processing non_miRNA reads
+ * STEP 6.2 - Processing non_miRNA reads
  */
 process non_mirna_processing {
     tag "$input"
@@ -336,19 +337,19 @@ process non_mirna_processing {
 }
 
 /*
- * STEP 8 - DESeq2 RNAseq count analysis 
+ * STEP 6.3 - DESeq2 RNAseq count analysis on non_miRNAs
  */
-process DESEQ {
+process non_miRNA_DESEQ {
     tag "$input_files"
-    publishDir "${params.output_dir}/DESeq", mode: 'copy'
+    publishDir "${params.output_dir}/DESeq/non_miRNA", mode: 'copy'
     
     input:
     file input_files from non_mirna_counts.toSortedList()
-    path layout from layout_channel
+    path layout from non_mirna_layout_channel
 
     output:
-    file '*.{pdf,csv,xlsx}' into DESEQ_results
-    file "mature_counts.csv" into mature_counts_ch
+    file '*.{pdf,csv,xlsx}' into non_miRNA_DESEQ_results
+    file "mature_counts.csv" into non_miRNA_mature_counts_ch
 
     script:
     """
@@ -357,69 +358,84 @@ process DESEQ {
 }
 
 /*
- * STEP 9 - miRNA format conversion to mirGFF3
+ * STEP 7.1 - STAR mature_miRNA_Mapping
  */
-// process mirtop_bam_hairpin {
-//     //label 'process_medium'
-//     tag "$input"
-//     publishDir "${params.outdir}", mode: 'copy'
+process miRNA_star {
+    cpus CPU_usage
+    tag "$reads"
 
-//     when:
-//     mirna_gtf
+    input:
+    file reads from collapsed_miRNA_fasta
+    path mature_db from mature_db_ch
 
-//     input:
-//     file input from miRBase_hairpin_collapse_bam.collect()
-//     file hairpin from hairpin_mirtop
-//     file gtf from mirna_gtf
+    output:
+    file "*Aligned.out.bam" into star_miRNA_bam
+    file "*Log.final.out" into star_miRNA_log_final
+    file "*_Stats.log" into star_miRNA_sam_stats
 
-//     output:
-//     file "mirtop/mirtop.gff" into mirtop_gff
-//     file "mirtop/mirtop.tsv" into mirtop_tsv
-//     file "mirtop/mirna.tsv" into mirna_tsv
-//     file "mirtop/mirtop_rawData.tsv" into isomir_tsv
+    script:
+    """
+    STAR \\
+        --genomeDir ${mature_db} \\
+        --readFilesIn ${reads} \\
+        --runThreadN ${task.cpus} \\
+        --outSAMattributes AS nM HI NH \\
+        --outFilterMultimapScoreRange 0 \\
+        --outFilterMatchNmin ${params.min_length} \\
+        --outFileNamePrefix ${reads}_ \\
+    grep 'Number of input reads' ${reads}_Log.final.out \\
+        | sed -r 's/\\s+//g' \\
+        | awk -F '|' '{print \$2}' \\
+        > ${reads}_Stats.log
+    echo ' reads; of these:' >> ${reads}_Stats.log
+    samtools view -bS ${reads}_Aligned.out.sam > ${reads}_Aligned.out.bam
+    rm ${reads}_Aligned.out.sam
+    """
+}
 
-//     script:
-//     """
-//     mirtop gff --hairpin $hairpin --gtf $gtf -o mirtop --sps $params.mirtrace_species $input
-//     mirtop counts --hairpin $hairpin --gtf $gtf -o mirtop --sps $params.mirtrace_species --add-extra --gff mirtop/mirtop.gff
-//     mirtop export --format isomir --hairpin $hairpin --gtf $gtf --sps $params.mirtrace_species -o mirtop mirtop/mirtop.gff
-//     collapse_mirtop.r mirtop/mirtop.tsv
-//     """
-// }
+/*
+ * STEP 7.2 - Processing miRNA reads
+ */
+process mirna_processing {
+    tag "$input"
+    publishDir "${params.output_dir}/processed_reads/miRNA", mode: 'copy'
 
-// /*
-//  * STEP 7 - STAR mature_miRNA_Mapping
-//  */
-// process star_Mature {
-//     cpus CPU_usage
-//     tag "$reads"
+    input:
+    file input from star_miRNA_bam
 
-//     input:
-//     file reads from collapsed_miRNA_fasta
-//     path mature_db from mature_db_ch
+    output:
+    file "${input.baseName}.stats" into mirna_counts
+    file "*.{flagstat,idxstats,stats}" into mirna_ch_sort_bam_flagstat_mqc
+    file "${input.baseName}.sorted.bam" into mirna_sorted_bam
+    file "${input.baseName}.sorted.bam.bai" into mirna_bai
 
-//     output:
-//     path("*Aligned.out.bam"), emit: bam
-//     path("*Log.final.out"), emit: log_final
-//     path("*_Stats.log"), emit: sam_stats
+    script:
+    """
+    samtools sort ${input.baseName}.bam -o ${input.baseName}.sorted.bam
+    samtools index ${input.baseName}.sorted.bam
+    samtools idxstats ${input.baseName}.sorted.bam > ${input.baseName}.stats
+    samtools flagstat ${input.baseName}.sorted.bam > ${input.baseName}.sorted.bam.flagstat
+    samtools stats ${input.baseName}.sorted.bam > ${input.baseName}.sorted.bam.stats
+    """
+}
 
-//     script:
-//     """
-//     STAR \\
-//         --genomeDir ${mature_db} \\
-//         --readFilesIn ${reads} \\
-//         --runThreadN ${task.cpus} \\
-//         --outSAMattributes AS nM HI NH \\
-//         --outFilterMultimapScoreRange 0 \\
-//         --outFilterMatchNmin ${params.min_length} \\
-//         --outFileNamePrefix ${reads}_ \\
-//     grep 'Number of input reads' ${reads}_Log.final.out \\
-//         | sed -r 's/\\s+//g' \\
-//         | awk -F '|' '{print \$2}' \\
-//         > ${reads}_Stats.log
-//     echo ' reads; of these:' >> ${reads}_Stats.log
-//     samtools view -bS ${reads}_Aligned.out.sam > ${reads}_Aligned.out.bam
-//     rm ${reads}_Aligned.out.sam
-//     """
-// }
+/*
+ * STEP 7.3 - DESeq2 RNAseq count analysis on miRNAs
+ */
+process miRNA_DESEQ {
+    tag "$input_files"
+    publishDir "${params.output_dir}/DESeq/miRNA", mode: 'copy'
+    
+    input:
+    file input_files from mirna_counts.toSortedList()
+    path layout from mirna_layout_channel
 
+    output:
+    file '*.{pdf,csv,xlsx}' into miRNA_DESEQ_results
+    file "mature_counts.csv" into miRNA_mature_counts_ch
+
+    script:
+    """
+    DESeq2.r $layout $params.paired_samples $input_files 
+    """
+}
