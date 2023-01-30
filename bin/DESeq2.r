@@ -47,9 +47,17 @@ category_file= args[1]
 paired_samples=args[2]
 print(paired_samples)
 filelist<-list()
-filelist<-input[grep(".mature.stats",input)]
-names(filelist)<-c("mature")
+filelist<-input
 header<-names(filelist)
+
+# Read the categories file
+categories=read.csv(category_file,header=FALSE)
+
+# Read the categories and format the filenames
+categories$V2=as.factor(categories$V2)
+number_levels=nlevels(as.factor(categories$V2))
+categories$V1 =gsub(".fq.gz","",categories$V1)
+categories$V1 =gsub(".fastq.gz","",categories$V1)
   
 # Prepare the combined data frame with gene ID as rownames and sample ID as colname
 data<-do.call("cbind", lapply(filelist, fread, header=FALSE, select=c(3)))
@@ -59,8 +67,13 @@ unmapped<-as.data.frame(unmapped)
 temp <- fread(filelist[1],header=FALSE, select=c(1))
 rownames(data)<-temp$V1
 rownames(unmapped)<-temp$V1
-colnames(data)<-gsub(".stats","",basename(filelist))
-colnames(unmapped)<-gsub(".stats","",basename(filelist))
+filenames=data.frame(filelist)
+for(category in categories$V1){
+  match=grep(category,filenames[,1])
+  filenames[match,]=category
+}
+colnames(data)<-filenames[,1]
+colnames(unmapped)<-filenames[,1]
   
 data<-data[rownames(data)!="*",,drop=FALSE]
 unmapped<-unmapped[rownames(unmapped)=="*",,drop=FALSE]
@@ -80,14 +93,6 @@ if (!is.null(nr_keep) & length(nr_keep)>0 & nr_keep > 0){
 write.csv(data,file="mature_counts.csv")
 RNAseq_data=data
 
-# Read the categories file
-categories=read.csv(category_file,header=FALSE)
-
-# Read the categories and format the filenames
-categories$V2=as.factor(categories$V2)
-number_levels=nlevels(as.factor(categories$V2))
-categories$V1 =gsub(".fq.gz","",categories$V1)
-categories$V1 =gsub(".fastq.gz","",categories$V1)
 
 # Check if two categories are present because DESeq2 requires two categories
 if(number_levels!=2)
