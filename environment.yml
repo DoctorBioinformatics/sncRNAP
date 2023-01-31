@@ -21,7 +21,7 @@ dependencies:
   - bioconda::seqkit
   - bioconda::mirtrace
   - bioconda::bioconductor-limma
-  - bioconda::bioconductor-edger
+#   - bioconda::bioconductor-edger
 #   - bioconda::mirdeep2=2.0.1.2
   - bioconda::bioconductor-deseq2
   - bioconda::bioconductor-enhancedvolcano
