@@ -26,13 +26,10 @@ conda activate sncRNAP
 ## Usage/Examples
 Run the following to conduct a group comparison analysis:
 ```javascript
-nextflow run sncRNAP -profile conda --input_dir input/
---output_dir ./Results --genome human 
---min_length 15 --trim_galore_max_length 50 
+nextflow run sncRNAP --input_dir input/
+--output_dir ./Results 
 --mature "https://mirbase.org/ftp/CURRENT/mature.fa.gz" 
---hairpin "https://mirbase.org/ftp/CURRENT/hairpin.fa.gz" 
 --layout ./layout.csv 
-
 ```
 
 
