@@ -102,6 +102,8 @@ CPU_usage = Math.round((Runtime.runtime.availableProcessors()*50)/100)
 ////////////////////////////////////////////////////
 // Create a channel for input_dir read files
 reads_ch = Channel.fromPath( ["$params.input_dir/*.fastq.gz", "$params.input_dir/*.fq.gz"])
+reads_ch_fastqc = Channel.fromPath( ["$params.input_dir/*.fastq.gz", "$params.input_dir/*.fq.gz"])
+reads_ch_mirtrace = Channel.fromPath( ["$params.input_dir/*.fastq.gz", "$params.input_dir/*.fq.gz"])
 
 // Create a channel to read only a single fastq file from the input directory
 import java.nio.file.*
@@ -123,7 +125,27 @@ novel_layout_channel=Channel.fromPath(["$params.layout"])
 //* --            Preprocessing             -- *////
 ////////////////////////////////////////////////////
 /*
- * STEP 1 - Create index for non_miRNA db
+ * STEP 1 - FastQC
+ */
+process fastqc {
+    cpus CPU_usage
+    tag "$reads"
+    publishDir "${params.output_dir}/fastqc", mode: 'copy'
+      
+    input:
+    file reads from reads_ch_fastqc
+
+    output:
+    file '*_fastqc.{zip,html}' into fastqc_results
+
+    script:
+    """
+    fastqc --quiet --threads ${task.cpus} $reads
+    """
+}
+
+/*
+ * STEP 2 - Create index for non_miRNA db
  */
 process non_miRNA_db {
     cpus CPU_usage
@@ -154,7 +176,7 @@ process non_miRNA_db {
 }
 
 /*
- * STEP 2 - Create index for mature miRNA
+ * STEP 3 - Create index for mature miRNA
  */
 process mature_idx {
     cpus CPU_usage
@@ -201,7 +223,7 @@ process mature_idx {
 }
 
 /*
- * STEP 3 - Get Adapter Sequence
+ * STEP 4 - Get Adapter Sequence
  */
 process get_Adapter {
     cpus CPU_usage
@@ -221,7 +243,28 @@ process get_Adapter {
 }
 
 /*
- * STEP 4 - Trim Galore
+ * STEP 5 - mirtrace
+ */
+process mirtrace {
+    tag "$reads"
+    publishDir "${params.output_dir}/mirtrace", mode: 'copy'
+    
+    input:
+    file reads from reads_ch_mirtrace.collect()
+    path adapter from adapter_sequence.collect()
+
+    output:
+    file '*mirtrace' into mirtrace_results
+
+    script:
+    """
+    sequence=`cat $adapter | while read -r F; do echo \$F; break; done`
+    mirtrace qc --adapter \$sequence --species ${params.genome == "human" || params.genome == "Human" ? "hsa" : params.genome == "mouse" || params.genome == "Mouse" ? "mmu" : params.genome == "rat" || params.genome == "Rat" ? "rno" : "unknown_species"} $reads --write-fasta --output-dir mirtrace --force
+    """
+}
+
+/*
+ * STEP 6 - Trim Galore
  */
 process trim_Galore {
     cpus CPU_usage
@@ -251,7 +294,7 @@ process trim_Galore {
 }
 
 /*
- * STEP 5 - read_Collapse
+ * STEP 7 - read_Collapse
  */
 process read_collapse {
     cpus CPU_usage
@@ -275,7 +318,7 @@ process read_collapse {
 //* --              Processes              -- *////
 ////////////////////////////////////////////////////
 /*
- * STEP 6.1 - STAR non_miRNA_Mapping
+ * STEP 8.1 - STAR non_miRNA_Mapping
  */
 process non_miRNA_star {
     cpus CPU_usage
@@ -311,7 +354,7 @@ process non_miRNA_star {
 }
 
 /*
- * STEP 6.2 - Processing non_miRNA reads
+ * STEP 8.2 - Processing non_miRNA reads
  */
 process non_mirna_processing {
     tag "$input"
@@ -337,7 +380,7 @@ process non_mirna_processing {
 }
 
 /*
- * STEP 6.3 - DESeq2 RNAseq count analysis on non_miRNAs
+ * STEP 8.3 - DESeq2 RNAseq count analysis on non_miRNAs
  */
 process non_miRNA_DESEQ {
     tag "$input_files"
@@ -358,7 +401,7 @@ process non_miRNA_DESEQ {
 }
 
 /*
- * STEP 7.1 - STAR mature_miRNA_Mapping
+ * STEP 9.1 - STAR mature_miRNA_Mapping
  */
 process miRNA_star {
     cpus CPU_usage
@@ -394,7 +437,7 @@ process miRNA_star {
 }
 
 /*
- * STEP 7.2 - Processing miRNA reads
+ * STEP 9.2 - Processing miRNA reads
  */
 process mirna_processing {
     tag "$input"
@@ -420,7 +463,7 @@ process mirna_processing {
 }
 
 /*
- * STEP 7.3 - DESeq2 RNAseq count analysis on miRNAs
+ * STEP 9.3 - DESeq2 RNAseq count analysis on miRNAs
  */
 process miRNA_DESEQ {
     tag "$input_files"
@@ -437,5 +480,62 @@ process miRNA_DESEQ {
     script:
     """
     DESeq2.r $layout $params.paired_samples $input_files 
+    """
+}
+
+////////////////////////////////////////////////////
+//* --              snRNA profiling         -- *////
+////////////////////////////////////////////////////
+/*
+ * STEP 10 - Multiqc
+ */
+//  process sncRNA_profiling {
+//     tag "$reads"
+//     publishDir "${params.output_dir}/multiqc", mode: 'copy'
+
+//     input:
+//     file ('fastqc/*') from fastqc_results.collect()
+//     file ('trim_galore/*') from trimgalore_results.collect()
+//     file ('mirtrace/*') from mirtrace_results.collect()
+//     file ('processed_reads/non_miRNA/*') from non_mirna_ch_sort_bam_flagstat_mqc.collect()
+//     file ('processed_reads/miRNA/*') from mirna_ch_sort_bam_flagstat_mqc.collect()
+
+//     output:
+//     file "*multiqc_report.html" into ch_multiqc_report
+//     file "*_data"
+
+//     script:
+
+//     """
+//     multiqc . -f $rtitle $rfilename -m samtools -m cutadapt -m fastqc -m star -m mirtrace 
+//     """
+// }
+
+////////////////////////////////////////////////////
+//* --              Report                  -- *////
+////////////////////////////////////////////////////
+/*
+ * STEP 11 - Multiqc
+ */
+process multiqc {
+    tag "$reads"
+    publishDir "${params.output_dir}/multiqc", mode: 'copy'
+
+    input:
+    file ('fastqc/*') from fastqc_results.collect()
+    file ('trim_galore/*') from trimgalore_results.collect()
+    file ('mirtrace/*') from mirtrace_results.collect()
+    file ('processed_reads/non_miRNA/*') from non_mirna_ch_sort_bam_flagstat_mqc.collect()
+    file ('processed_reads/miRNA/*') from mirna_ch_sort_bam_flagstat_mqc.collect()
+
+    output:
+    file "*multiqc_report.html" into ch_multiqc_report
+    file "*_data"
+
+    script:
+    rtitle = ''
+    rfilename = ''
+    """
+    multiqc . -f $rtitle $rfilename -m samtools -m cutadapt -m fastqc -m star -m mirtrace 
     """
 }
