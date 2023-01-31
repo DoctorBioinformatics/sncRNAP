@@ -13,7 +13,7 @@ dependencies:
   - bioconda::star
   - conda-forge::openjdk=11
   - bioconda::multiqc
-  - bioconda::mirtop
+#   - bioconda::mirtop
   - bioconda::seqcluster
   - bioconda::htseq
   - bioconda::fastqc
@@ -22,7 +22,7 @@ dependencies:
   - bioconda::mirtrace
   - bioconda::bioconductor-limma
   - bioconda::bioconductor-edger
-  - bioconda::mirdeep2=2.0.1.2
+#   - bioconda::mirdeep2=2.0.1.2
   - bioconda::bioconductor-deseq2
   - bioconda::bioconductor-enhancedvolcano
 
