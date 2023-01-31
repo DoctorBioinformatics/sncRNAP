@@ -31,7 +31,7 @@ nextflow run sncRNAP \
 --input_dir input/ \
 --output_dir ./Results \
 --mature "https://mirbase.org/ftp/CURRENT/mature.fa.gz" \
---layout ./layout.csv \
+--layout ./layout.csv 
 ```
 
 
