@@ -487,7 +487,7 @@ process miRNA_DESEQ {
 //* --              snRNA profiling         -- *////
 ////////////////////////////////////////////////////
 /*
- * STEP 10 - Multiqc
+ * STEP 10 - sncRNA profiling
  */
 //  process sncRNA_profiling {
 //     tag "$reads"
