@@ -3,3 +3,5 @@
 2) check collapsed reads, i.e. should it be on fastq or bam files?
 3) mirDeep... should we integrate it?
 4) novel process!
+  -streamlit(Hesham)
+  
