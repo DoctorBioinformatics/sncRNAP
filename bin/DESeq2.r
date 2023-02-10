@@ -169,7 +169,7 @@ up <- (resultsDF[!is.na(resultsDF$pvalue) & resultsDF$pvalue <= 0.05 &
                    resultsDF$log2FoldChange >= 0, ])
 down <- (resultsDF[!is.na(resultsDF$pvalue) & resultsDF$pvalue <= 0.05 &    
                      resultsDF$log2FoldChange <= 0, ]) 
-write_to_file=cbind(resultsDF[,1],resultsDF[ , c("log2FoldChange", "pvalue")] , resultsDF[,8:ncol(resultsDF)])
+write_to_file=cbind(resultsDF[,1],resultsDF[ , c("log2FoldChange", "pvalue", "padj")] , resultsDF[,8:ncol(resultsDF)])
 names(write_to_file)[names(write_to_file) == 'rownames(results.DF)'] <- 'ID'
 file_name=paste(base_level,"_vs_",level_to_compare,".xlsx",sep="")
 write_xlsx(write_to_file,file_name)
