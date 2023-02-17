@@ -26,11 +26,12 @@ def helpMessage() {
     sncRNAP
     ===========
     Usage: Group comparison analysis:
-    nextflow run sncRNAP -profile conda --input_dir '*fq.gz' 
-    --output_dir ./Results --genome GRCm38 --min_length 15 --trim_galore_max_length 50 
-    --mature "https://mirbase.org/ftp/CURRENT/mature.fa.gz" 
-    --hairpin "https://mirbase.org/ftp/CURRENT/hairpin.fa.gz" 
-    --layout ./layout.csv
+    nextflow run sncRNAP \
+    --genome human \
+    --input_dir input/ \
+    --output_dir ./Results \
+    --mature "https://mirbase.org/ftp/CURRENT/mature.fa.gz" \
+    --layout ./layout.csv 
 
     Mandatory arguments:
     output_dir directory: ${params.output_dir}
@@ -112,15 +113,13 @@ random_index = Math.floor(Math.random() * all_files.size()).toInteger()
 reads_single = all_files.get(random_index)
 
 // Create a path for genomeFasta
-params.genomeFasta = "$baseDir/DBs/${params.genome}_tRNAs-and-ncRNAs-and-lookalikes.fa_exc_miRNA.fa"
+params.genomeFasta = "$baseDir/DBs/${params.genome}_sncRNA.fa"
 
 // Create a path for adapter sequence
 params.adapter = "$baseDir/adapters_db/adapters.fa"
 
 // Create a path for layout file
-non_mirna_layout_channel = Channel.fromPath(["$params.layout"])
-mirna_layout_channel = Channel.fromPath(["$params.layout"])
-novel_layout_channel=Channel.fromPath(["$params.layout"])
+sncRNA_layout_channel = Channel.fromPath(["$params.layout"])
 ////////////////////////////////////////////////////
 //* --            Preprocessing             -- *////
 ////////////////////////////////////////////////////
@@ -145,9 +144,9 @@ process fastqc {
 }
 
 /*
- * STEP 2 - Create index for non_miRNA db
+ * STEP 2 - Create index for sncRNA db
  */
-process non_miRNA_db {
+process sncRNA_db {
     cpus CPU_usage
     tag "$fasta"
     publishDir "${params.output_dir}/genome_ref", mode: 'copy'
@@ -156,7 +155,7 @@ process non_miRNA_db {
     path fasta from params.genomeFasta
 
     output:
-    path "non_miRNA_db" into non_miRNA_db_ch
+    path "sncRNA_db" into sncRNA_db_ch
 
     script:
     def memory  = task.memory ? "--limitGenomeGenerateRAM ${task.memory.toBytes() - 100000000}" : ''
@@ -164,7 +163,7 @@ process non_miRNA_db {
     echo $memory
     STAR \\
         --runMode genomeGenerate \\
-        --genomeDir non_miRNA_db/ \\
+        --genomeDir sncRNA_db/ \\
         --genomeFastaFiles $fasta \\
         --runThreadN $task.cpus \\
         --genomeSAsparseD 3 \\
@@ -175,55 +174,55 @@ process non_miRNA_db {
     """
 }
 
-/*
- * STEP 3 - Create index for mature miRNA
- */
-process mature_idx {
-    cpus CPU_usage
-    publishDir "${params.output_dir}/mature_refs", mode: 'copy'
+// /*
+//  * STEP 3 - Create index for mature miRNA
+//  */
+// process mature_idx {
+//     cpus CPU_usage
+//     publishDir "${params.output_dir}/mature_refs", mode: 'copy'
 
-    input:
-    path mature from params.mature
+//     input:
+//     path mature from params.mature
 
-    output:
-    path "mature_db" into mature_db_ch
+//     output:
+//     path "mature_db" into mature_db_ch
 
-    script:
-    def memory  = task.memory ? "--limitGenomeGenerateRAM ${task.memory.toBytes() - 100000000}" : ''
-    """
-    # A) Uncompress FASTA files if files are zipped:
-    MATURE="$mature"
+//     script:
+//     def memory  = task.memory ? "--limitGenomeGenerateRAM ${task.memory.toBytes() - 100000000}" : ''
+//     """
+//     # A) Uncompress FASTA files if files are zipped:
+//     MATURE="$mature"
     
-    if [[ \$MATURE == *.gz ]]; then
-        gunzip -f \$MATURE
-        MATURE=\${MATURE%%.gz}
-    fi
+//     if [[ \$MATURE == *.gz ]]; then
+//         gunzip -f \$MATURE
+//         MATURE=\${MATURE%%.gz}
+//     fi
 
-    # B) Remove spaces from files:
-    sed -i 's, ,_,g' \$MATURE
+//     # B) Remove spaces from files:
+//     sed -i 's, ,_,g' \$MATURE
 
-    # C) Convert mRNA sequence into DNA:    
-    seqkit grep -r --pattern ".*${params.genome == "human" || params.genome == "Human" ? "hsa" : params.genome == "mouse" || params.genome == "Mouse" ? "mmu" : params.genome == "rat" || params.genome == "Rat" ? "rno" : "unknown_species"}-.*" \$MATURE > mature_sps.fa
-    seqkit seq --rna2dna mature_sps.fa > mature_genome.fa
-    fasta_formatter -w 0 -i mature_genome.fa -o mature_idx.fa
+//     # C) Convert mRNA sequence into DNA:    
+//     seqkit grep -r --pattern ".*${params.genome == "human" || params.genome == "Human" ? "hsa" : params.genome == "mouse" || params.genome == "Mouse" ? "mmu" : params.genome == "rat" || params.genome == "Rat" ? "rno" : "unknown_species"}-.*" \$MATURE > mature_sps.fa
+//     seqkit seq --rna2dna mature_sps.fa > mature_genome.fa
+//     fasta_formatter -w 0 -i mature_genome.fa -o mature_idx.fa
 
-    # D) Build genome idx for mature idx files:
-    echo $memory
-    STAR \\
-        --runMode genomeGenerate \\
-        --genomeDir mature_db/ \\
-        --genomeFastaFiles mature_idx.fa \\
-        --runThreadN $task.cpus \\
-        --genomeSAsparseD 3 \\
-        --genomeSAindexNbases 6 \\
-        --genomeChrBinNbits 14 \\
-        $memory
-    STAR --version | sed -e "s/STAR_//g" > STAR.version.txt
-    """
-}
+//     # D) Build genome idx for mature idx files:
+//     echo $memory
+//     STAR \\
+//         --runMode genomeGenerate \\
+//         --genomeDir mature_db/ \\
+//         --genomeFastaFiles mature_idx.fa \\
+//         --runThreadN $task.cpus \\
+//         --genomeSAsparseD 3 \\
+//         --genomeSAindexNbases 6 \\
+//         --genomeChrBinNbits 14 \\
+//         $memory
+//     STAR --version | sed -e "s/STAR_//g" > STAR.version.txt
+//     """
+// }
 
 /*
- * STEP 4 - Get Adapter Sequence
+ * STEP 3 - Get Adapter Sequence
  */
 process get_Adapter {
     cpus CPU_usage
@@ -243,7 +242,7 @@ process get_Adapter {
 }
 
 /*
- * STEP 5 - mirtrace
+ * STEP 4 - mirtrace
  */
 process mirtrace {
     tag "$reads"
@@ -264,7 +263,7 @@ process mirtrace {
 }
 
 /*
- * STEP 6 - Trim Galore
+ * STEP 5 - Trim Galore
  */
 process trim_Galore {
     cpus CPU_usage
@@ -294,7 +293,7 @@ process trim_Galore {
 }
 
 /*
- * STEP 7 - read_Collapse
+ * STEP 6 - read_Collapse
  */
 process read_collapse {
     cpus CPU_usage
@@ -304,7 +303,7 @@ process read_collapse {
     file reads from trimmed_reads_collapsed
 
     output:
-    file 'final/*.fastq' into collapsed_non_miRNA_fasta, collapsed_miRNA_fasta
+    file 'final/*.fastq' into collapsed_sncRNA_fasta
 
     script:
     prefix = reads.toString().replace("_trimmed.fq.gz", "")
@@ -314,29 +313,29 @@ process read_collapse {
     mv collapsed/${prefix}_trimmed_trimmed.fastq final/${prefix}.fastq
     """
 }
-////////////////////////////////////////////////////
-//* --              Processes              -- *////
-////////////////////////////////////////////////////
+// ////////////////////////////////////////////////////
+// //* --              Processes              -- *////
+// ////////////////////////////////////////////////////
 /*
- * STEP 8.1 - STAR non_miRNA_Mapping
+ * STEP 7.1 - STAR non_miRNA_Mapping
  */
-process non_miRNA_star {
+process star {
     cpus CPU_usage
     tag "$reads"
 
     input:
-    file reads from collapsed_non_miRNA_fasta
-    path non_miRNA_db from non_miRNA_db_ch
+    file reads from collapsed_sncRNA_fasta
+    path sncRNA_db from sncRNA_db_ch
 
     output:
-    file "*Aligned.out.bam" into star_non_miRNA_bam
-    file "*Log.final.out" into star_non_miRNA_log_final
-    file "*_Stats.log" into star_non_miRNA_sam_stats
+    file "*Aligned.out.bam" into star_sncRNA_bam
+    file "*Log.final.out" into star_sncRNA_log_final
+    file "*_Stats.log" into star_sncRNA_sam_stats
     
     script:
     """
     STAR \\
-        --genomeDir ${non_miRNA_db} \\
+        --genomeDir ${sncRNA_db} \\
         --readFilesIn ${reads} \\
         --runThreadN ${task.cpus} \\
         --outSAMattributes AS nM HI NH \\
@@ -354,20 +353,20 @@ process non_miRNA_star {
 }
 
 /*
- * STEP 8.2 - Processing non_miRNA reads
+ * STEP 7.2 - Processing non_miRNA reads
  */
-process non_mirna_processing {
+process read_processing {
     tag "$input"
-    publishDir "${params.output_dir}/processed_reads/non_miRNA", mode: 'copy'
+    publishDir "${params.output_dir}/processed_reads", mode: 'copy'
 
     input:
-    file input from star_non_miRNA_bam
+    file input from star_sncRNA_bam
 
     output:
-    file "${input.baseName}.stats" into non_mirna_counts
-    file "*.{flagstat,idxstats,stats}" into non_mirna_ch_sort_bam_flagstat_mqc
-    file "${input.baseName}.sorted.bam" into non_mirna_sorted_bam
-    file "${input.baseName}.sorted.bam.bai" into non_mirna_bai
+    file "${input.baseName}.stats" into sncRNA_counts
+    file "*.{flagstat,idxstats,stats}" into sncRNA_ch_sort_bam_flagstat_mqc
+    file "${input.baseName}.sorted.bam" into sncRNA_sorted_bam
+    file "${input.baseName}.sorted.bam.bai" into sncRNA_bai
 
     script:
     """
@@ -380,19 +379,19 @@ process non_mirna_processing {
 }
 
 /*
- * STEP 8.3 - DESeq2 RNAseq count analysis on non_miRNAs
+ * STEP 7.3 - DESeq2 RNAseq count analysis on non_miRNAs
  */
-process non_miRNA_DESEQ {
+process DESEQ {
     tag "$input_files"
-    publishDir "${params.output_dir}/DESeq/non_miRNA", mode: 'copy'
+    publishDir "${params.output_dir}/DESeq", mode: 'copy'
     
     input:
-    file input_files from non_mirna_counts.toSortedList()
-    path layout from non_mirna_layout_channel
+    file input_files from sncRNA_counts.toSortedList()
+    path layout from sncRNA_layout_channel
 
     output:
-    file '*.{pdf,csv,xlsx}' into non_miRNA_DESEQ_results
-    file "mature_counts.csv" into non_miRNA_mature_counts_ch
+    file '*.{pdf,csv,xlsx}' into sncRNA_DESEQ_results
+    file "normalized_counts.csv" into sncRNA_normalized_counts_ch
 
     script:
     """
@@ -400,122 +399,122 @@ process non_miRNA_DESEQ {
     """
 }
 
-/*
- * STEP 9.1 - STAR mature_miRNA_Mapping
- */
-process miRNA_star {
-    cpus CPU_usage
-    tag "$reads"
-
-    input:
-    file reads from collapsed_miRNA_fasta
-    path mature_db from mature_db_ch
-
-    output:
-    file "*Aligned.out.bam" into star_miRNA_bam
-    file "*Log.final.out" into star_miRNA_log_final
-    file "*_Stats.log" into star_miRNA_sam_stats
-
-    script:
-    """
-    STAR \\
-        --genomeDir ${mature_db} \\
-        --readFilesIn ${reads} \\
-        --runThreadN ${task.cpus} \\
-        --outSAMattributes AS nM HI NH \\
-        --outFilterMultimapScoreRange 0 \\
-        --outFilterMatchNmin ${params.min_length} \\
-        --outFileNamePrefix ${reads}_ \\
-    grep 'Number of input reads' ${reads}_Log.final.out \\
-        | sed -r 's/\\s+//g' \\
-        | awk -F '|' '{print \$2}' \\
-        > ${reads}_Stats.log
-    echo ' reads; of these:' >> ${reads}_Stats.log
-    samtools view -bS ${reads}_Aligned.out.sam > ${reads}_Aligned.out.bam
-    rm ${reads}_Aligned.out.sam
-    """
-}
-
-/*
- * STEP 9.2 - Processing miRNA reads
- */
-process mirna_processing {
-    tag "$input"
-    publishDir "${params.output_dir}/processed_reads/miRNA", mode: 'copy'
-
-    input:
-    file input from star_miRNA_bam
-
-    output:
-    file "${input.baseName}.stats" into mirna_counts
-    file "*.{flagstat,idxstats,stats}" into mirna_ch_sort_bam_flagstat_mqc
-    file "${input.baseName}.sorted.bam" into mirna_sorted_bam
-    file "${input.baseName}.sorted.bam.bai" into mirna_bai
-
-    script:
-    """
-    samtools sort ${input.baseName}.bam -o ${input.baseName}.sorted.bam
-    samtools index ${input.baseName}.sorted.bam
-    samtools idxstats ${input.baseName}.sorted.bam > ${input.baseName}.stats
-    samtools flagstat ${input.baseName}.sorted.bam > ${input.baseName}.sorted.bam.flagstat
-    samtools stats ${input.baseName}.sorted.bam > ${input.baseName}.sorted.bam.stats
-    """
-}
-
-/*
- * STEP 9.3 - DESeq2 RNAseq count analysis on miRNAs
- */
-process miRNA_DESEQ {
-    tag "$input_files"
-    publishDir "${params.output_dir}/DESeq/miRNA", mode: 'copy'
-    
-    input:
-    file input_files from mirna_counts.toSortedList()
-    path layout from mirna_layout_channel
-
-    output:
-    file '*.{pdf,csv,xlsx}' into miRNA_DESEQ_results
-    file "mature_counts.csv" into miRNA_mature_counts_ch
-
-    script:
-    """
-    DESeq2.r $layout $params.paired_samples $input_files 
-    """
-}
-
-////////////////////////////////////////////////////
-//* --              snRNA profiling         -- *////
-////////////////////////////////////////////////////
-/*
- * STEP 10 - sncRNA profiling
- */
-//  process sncRNA_profiling {
+// /*
+//  * STEP 9.1 - STAR mature_miRNA_Mapping
+//  */
+// process miRNA_star {
+//     cpus CPU_usage
 //     tag "$reads"
-//     publishDir "${params.output_dir}/multiqc", mode: 'copy'
 
 //     input:
-//     file ('fastqc/*') from fastqc_results.collect()
-//     file ('trim_galore/*') from trimgalore_results.collect()
-//     file ('mirtrace/*') from mirtrace_results.collect()
-//     file ('processed_reads/non_miRNA/*') from non_mirna_ch_sort_bam_flagstat_mqc.collect()
-//     file ('processed_reads/miRNA/*') from mirna_ch_sort_bam_flagstat_mqc.collect()
+//     file reads from collapsed_miRNA_fasta
+//     path mature_db from mature_db_ch
 
 //     output:
-//     file "*multiqc_report.html" into ch_multiqc_report
-//     file "*_data"
+//     file "*Aligned.out.bam" into star_miRNA_bam
+//     file "*Log.final.out" into star_miRNA_log_final
+//     file "*_Stats.log" into star_miRNA_sam_stats
 
 //     script:
-
 //     """
-//     multiqc . -f $rtitle $rfilename -m samtools -m cutadapt -m fastqc -m star -m mirtrace 
+//     STAR \\
+//         --genomeDir ${mature_db} \\
+//         --readFilesIn ${reads} \\
+//         --runThreadN ${task.cpus} \\
+//         --outSAMattributes AS nM HI NH \\
+//         --outFilterMultimapScoreRange 0 \\
+//         --outFilterMatchNmin ${params.min_length} \\
+//         --outFileNamePrefix ${reads}_ \\
+//     grep 'Number of input reads' ${reads}_Log.final.out \\
+//         | sed -r 's/\\s+//g' \\
+//         | awk -F '|' '{print \$2}' \\
+//         > ${reads}_Stats.log
+//     echo ' reads; of these:' >> ${reads}_Stats.log
+//     samtools view -bS ${reads}_Aligned.out.sam > ${reads}_Aligned.out.bam
+//     rm ${reads}_Aligned.out.sam
 //     """
 // }
 
-////////////////////////////////////////////////////
-//* --              Report                  -- *////
-////////////////////////////////////////////////////
+// /*
+//  * STEP 9.2 - Processing miRNA reads
+//  */
+// process mirna_processing {
+//     tag "$input"
+//     publishDir "${params.output_dir}/processed_reads/miRNA", mode: 'copy'
+
+//     input:
+//     file input from star_miRNA_bam
+
+//     output:
+//     file "${input.baseName}.stats" into mirna_counts
+//     file "*.{flagstat,idxstats,stats}" into mirna_ch_sort_bam_flagstat_mqc
+//     file "${input.baseName}.sorted.bam" into mirna_sorted_bam
+//     file "${input.baseName}.sorted.bam.bai" into mirna_bai
+
+//     script:
+//     """
+//     samtools sort ${input.baseName}.bam -o ${input.baseName}.sorted.bam
+//     samtools index ${input.baseName}.sorted.bam
+//     samtools idxstats ${input.baseName}.sorted.bam > ${input.baseName}.stats
+//     samtools flagstat ${input.baseName}.sorted.bam > ${input.baseName}.sorted.bam.flagstat
+//     samtools stats ${input.baseName}.sorted.bam > ${input.baseName}.sorted.bam.stats
+//     """
+// }
+
+// /*
+//  * STEP 9.3 - DESeq2 RNAseq count analysis on miRNAs
+//  */
+// process miRNA_DESEQ {
+//     tag "$input_files"
+//     publishDir "${params.output_dir}/DESeq/miRNA", mode: 'copy'
+    
+//     input:
+//     file input_files from mirna_counts.toSortedList()
+//     path layout from mirna_layout_channel
+
+//     output:
+//     file '*.{pdf,csv,xlsx}' into miRNA_DESEQ_results
+//     file "mature_counts.csv" into miRNA_mature_counts_ch
+
+//     script:
+//     """
+//     DESeq2.r $layout $params.paired_samples $input_files 
+//     """
+// }
+
+// ////////////////////////////////////////////////////
+// //* --              snRNA profiling         -- *////
+// ////////////////////////////////////////////////////
+// /*
+//  * STEP 8 - sncRNA profiling
+//  */
+// //  process sncRNA_profiling {
+// //     tag "$reads"
+// //     publishDir "${params.output_dir}/multiqc", mode: 'copy'
+
+// //     input:
+// //     file ('fastqc/*') from fastqc_results.collect()
+// //     file ('trim_galore/*') from trimgalore_results.collect()
+// //     file ('mirtrace/*') from mirtrace_results.collect()
+// //     file ('processed_reads/non_miRNA/*') from non_mirna_ch_sort_bam_flagstat_mqc.collect()
+// //     file ('processed_reads/miRNA/*') from mirna_ch_sort_bam_flagstat_mqc.collect()
+
+// //     output:
+// //     file "*multiqc_report.html" into ch_multiqc_report
+// //     file "*_data"
+
+// //     script:
+
+// //     """
+// //     multiqc . -f $rtitle $rfilename -m samtools -m cutadapt -m fastqc -m star -m mirtrace 
+// //     """
+// // }
+
+// ////////////////////////////////////////////////////
+// //* --              Report                  -- *////
+// ////////////////////////////////////////////////////
 /*
- * STEP 11 - Multiqc
+ * STEP 9 - Multiqc
  */
 process multiqc {
     tag "$reads"
@@ -525,8 +524,8 @@ process multiqc {
     file ('fastqc/*') from fastqc_results.collect()
     file ('trim_galore/*') from trimgalore_results.collect()
     file ('mirtrace/*') from mirtrace_results.collect()
-    file ('processed_reads/non_miRNA/*') from non_mirna_ch_sort_bam_flagstat_mqc.collect()
-    file ('processed_reads/miRNA/*') from mirna_ch_sort_bam_flagstat_mqc.collect()
+    file ('processed_reads/*') from sncRNA_ch_sort_bam_flagstat_mqc.collect()
+    
 
     output:
     file "*multiqc_report.html" into ch_multiqc_report
