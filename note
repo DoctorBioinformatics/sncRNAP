@@ -1,11 +1,11 @@
 # points to address!
-1) change fasta ids with id_class and merge dbs into one db
-2) check collapsed reads, i.e. should it be on fastq or bam files?
-3) mirDeep... should we integrate it?
-4) novel process!
-  -streamlit(Hesham)
-5) DEseq:
-  -visualization
+1)DEseq:
   -FDR
-6) validate pipeline
+2) change fasta ids with id_class and merge dbs into one db
+3) validate pipeline
+4) check collapsed reads, i.e. should it be on fastq or bam files?
+5) novel process!
+  -streamlit(Hesham)
+#6) mirDeep... should we integrate it?
+
   
