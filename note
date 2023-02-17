@@ -1,7 +1,7 @@
 # points to address!
-1)DEseq:
+#1) change fasta ids with id_class and merge dbs into one db
+2)DEseq:
   -FDR
-2) change fasta ids with id_class and merge dbs into one db
 3) validate pipeline
 4) check collapsed reads, i.e. should it be on fastq or bam files?
 5) novel process!
