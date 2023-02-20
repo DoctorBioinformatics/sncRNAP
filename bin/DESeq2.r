@@ -119,6 +119,7 @@ RNAseq_data = RNAseq_data[,colOrder]
 
 #  Format data for DESeqDataSetFromMatrix
 data= as.data.frame(apply(RNAseq_data, 2, as.numeric))
+rownames(data)=rownames(RNAseq_data)
 data=as.matrix(data)
 
 #paired analysis
