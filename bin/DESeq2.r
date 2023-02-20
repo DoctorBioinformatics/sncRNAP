@@ -74,7 +74,7 @@ for(category in categories$V1){
 }
 colnames(data)<-filenames[,1]
 colnames(unmapped)<-filenames[,1]
-  
+
 data<-data[rownames(data)!="*",,drop=FALSE]
 unmapped<-unmapped[rownames(unmapped)=="*",,drop=FALSE]
 
@@ -87,7 +87,7 @@ row_sub = apply(data, 1, function(row) all(row ==0 ))
 nr_keep <- table(row_sub)
 nr_keep <- as.numeric(nr_keep[names(nr_keep) == FALSE])
 if (!is.null(nr_keep) & length(nr_keep)>0 & nr_keep > 0){
-   data<-data[!row_sub,]
+  data<-data[!row_sub,]
 }
 
 write.csv(data,file="normalized_counts.csv")
@@ -107,8 +107,6 @@ level_to_compare=levels(categories$V2)[2]
 
 # Format RNA seq count data to fit the DESeqDataSetFromMatrix countData format
 RNAseq_data <- RNAseq_data[-1, ] 
-colnames(RNAseq_data)=sub('.mature','',colnames(RNAseq_data))
-colnames(RNAseq_data)=sub('_BIO','',colnames(RNAseq_data))
 
 # Creat col_data to match DESeqDataSetFromMatrix colData 
 col_data=data.frame(categories$V2)
@@ -119,22 +117,9 @@ rownames(col_data)=categories$V1
 colOrder =(rownames(col_data))
 RNAseq_data = RNAseq_data[,colOrder]
 
-# # Histogram of mean gene counts
-# 
-# mature_counts= as.data.frame(apply(RNAseq_data, 2, as.numeric))
-# RNAseq_data$Normalised_count=rowMeans(mature_counts)
-# RNAseq_data<-filter(RNAseq_data, Normalised_count>1)
-# 
-# hist_counts=ggplot(RNAseq_data, aes(x=Normalised_count)) + 
-#   geom_histogram(alpha = 0.5, aes(y = ..density..),bins = 10)
-# 
-# ggsave("Mature_Counts_Histogram.pdf", hist_counts, width = 8, height = 8)
-# RNAseq_data$Normalised_count <- NULL
-
 #  Format data for DESeqDataSetFromMatrix
 data= as.data.frame(apply(RNAseq_data, 2, as.numeric))
 data=as.matrix(data)
-rownames(data)= gsub("_.*", "", rownames(RNAseq_data))
 
 #paired analysis
 if(paired_samples){
@@ -171,25 +156,10 @@ down <- (resultsDF[!is.na(resultsDF$pvalue) & resultsDF$pvalue <= 0.05 &
                      resultsDF$log2FoldChange <= 0, ]) 
 write_to_file=cbind(resultsDF[,1],resultsDF[ , c("log2FoldChange", "pvalue", "padj")] , resultsDF[,8:ncol(resultsDF)])
 names(write_to_file)[names(write_to_file) == 'rownames(results.DF)'] <- 'ID'
-file_name=paste(base_level,"_vs_",level_to_compare,".xlsx",sep="")
-write_xlsx(write_to_file,file_name)
+file_name=paste(base_level,"_vs_",level_to_compare,".csv",sep="")
+write.csv(write_to_file,file=file_name)
 
-volcano <- EnhancedVolcano(results.DF,
-                           lab = rownames(results.DF),
-                           x = 'log2FoldChange',
-                           y = 'pvalue',
-                           labSize = 4,
-                           xlim = c(min(results.DF$log2FoldChange, na.rm=TRUE),
-                                    max(results.DF$log2FoldChange, na.rm=TRUE)),
-                           ylim = c(0, max(-log10(results.DF$pvalue), na.rm=TRUE) + 0.05),
-                           pCutoff = 0.05, 
-                           FCcutoff = 2)
 
-width <- 10
-height <- 6
-
-volcano_plot_name=paste0(base_level,"_vs_",level_to_compare,"_Volcano_plot.pdf", sep="")
-ggsave(volcano_plot_name, volcano, width = width, height = height)
 
 
 sample_numbers=categories %>% group_by(V2) %>% summarise(num=length(V2))
@@ -275,3 +245,4 @@ width <- 6
 height <- 6
 pca_plot_name=paste0(base_level,"_vs_",level_to_compare,"_PCA_plot.pdf", sep="")
 ggsave(pca_plot_name, pca_plot, width = width, height = height)
+
