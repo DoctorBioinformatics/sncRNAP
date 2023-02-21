@@ -390,8 +390,9 @@ process DESEQ {
     path layout from sncRNA_layout_channel
 
     output:
-    file '*.{pdf,csv,xlsx}' into sncRNA_DESEQ_results
+    file 'C_vs_T.csv' into c_vs_t_csv
     file "normalized_counts.csv" into sncRNA_normalized_counts_ch
+    file '*.{pdf,xlsx}' into sncRNA_DESEQ_results
 
     script:
     """
@@ -399,120 +400,32 @@ process DESEQ {
     """
 }
 
-// /*
-//  * STEP 9.1 - STAR mature_miRNA_Mapping
-//  */
-// process miRNA_star {
-//     cpus CPU_usage
-//     tag "$reads"
+////////////////////////////////////////////////////
+//* --              snRNA profiling         -- *////
+////////////////////////////////////////////////////
+/*
+ * STEP 8 - sncRNA profiling
+ */
+ process sncRNA_profiling {
+    tag "$normalized_counts"
+    publishDir "${params.output_dir}/sncRNAP_summary", mode: 'copy'
 
-//     input:
-//     file reads from collapsed_miRNA_fasta
-//     path mature_db from mature_db_ch
+    input:
+    path fasta from params.genomeFasta
+    file group_comparison_csv from c_vs_t_csv
 
-//     output:
-//     file "*Aligned.out.bam" into star_miRNA_bam
-//     file "*Log.final.out" into star_miRNA_log_final
-//     file "*_Stats.log" into star_miRNA_sam_stats
+    output:
+    file '*.{pdf,fa,csv}' into sncRNAP_summary
 
-//     script:
-//     """
-//     STAR \\
-//         --genomeDir ${mature_db} \\
-//         --readFilesIn ${reads} \\
-//         --runThreadN ${task.cpus} \\
-//         --outSAMattributes AS nM HI NH \\
-//         --outFilterMultimapScoreRange 0 \\
-//         --outFilterMatchNmin ${params.min_length} \\
-//         --outFileNamePrefix ${reads}_ \\
-//     grep 'Number of input reads' ${reads}_Log.final.out \\
-//         | sed -r 's/\\s+//g' \\
-//         | awk -F '|' '{print \$2}' \\
-//         > ${reads}_Stats.log
-//     echo ' reads; of these:' >> ${reads}_Stats.log
-//     samtools view -bS ${reads}_Aligned.out.sam > ${reads}_Aligned.out.bam
-//     rm ${reads}_Aligned.out.sam
-//     """
-// }
+    script:
+    """
+    sncRNA_profiling.py $fasta $group_comparison_csv
+    """
+}
 
-// /*
-//  * STEP 9.2 - Processing miRNA reads
-//  */
-// process mirna_processing {
-//     tag "$input"
-//     publishDir "${params.output_dir}/processed_reads/miRNA", mode: 'copy'
-
-//     input:
-//     file input from star_miRNA_bam
-
-//     output:
-//     file "${input.baseName}.stats" into mirna_counts
-//     file "*.{flagstat,idxstats,stats}" into mirna_ch_sort_bam_flagstat_mqc
-//     file "${input.baseName}.sorted.bam" into mirna_sorted_bam
-//     file "${input.baseName}.sorted.bam.bai" into mirna_bai
-
-//     script:
-//     """
-//     samtools sort ${input.baseName}.bam -o ${input.baseName}.sorted.bam
-//     samtools index ${input.baseName}.sorted.bam
-//     samtools idxstats ${input.baseName}.sorted.bam > ${input.baseName}.stats
-//     samtools flagstat ${input.baseName}.sorted.bam > ${input.baseName}.sorted.bam.flagstat
-//     samtools stats ${input.baseName}.sorted.bam > ${input.baseName}.sorted.bam.stats
-//     """
-// }
-
-// /*
-//  * STEP 9.3 - DESeq2 RNAseq count analysis on miRNAs
-//  */
-// process miRNA_DESEQ {
-//     tag "$input_files"
-//     publishDir "${params.output_dir}/DESeq/miRNA", mode: 'copy'
-    
-//     input:
-//     file input_files from mirna_counts.toSortedList()
-//     path layout from mirna_layout_channel
-
-//     output:
-//     file '*.{pdf,csv,xlsx}' into miRNA_DESEQ_results
-//     file "mature_counts.csv" into miRNA_mature_counts_ch
-
-//     script:
-//     """
-//     DESeq2.r $layout $params.paired_samples $input_files 
-//     """
-// }
-
-// ////////////////////////////////////////////////////
-// //* --              snRNA profiling         -- *////
-// ////////////////////////////////////////////////////
-// /*
-//  * STEP 8 - sncRNA profiling
-//  */
-// //  process sncRNA_profiling {
-// //     tag "$reads"
-// //     publishDir "${params.output_dir}/multiqc", mode: 'copy'
-
-// //     input:
-// //     file ('fastqc/*') from fastqc_results.collect()
-// //     file ('trim_galore/*') from trimgalore_results.collect()
-// //     file ('mirtrace/*') from mirtrace_results.collect()
-// //     file ('processed_reads/non_miRNA/*') from non_mirna_ch_sort_bam_flagstat_mqc.collect()
-// //     file ('processed_reads/miRNA/*') from mirna_ch_sort_bam_flagstat_mqc.collect()
-
-// //     output:
-// //     file "*multiqc_report.html" into ch_multiqc_report
-// //     file "*_data"
-
-// //     script:
-
-// //     """
-// //     multiqc . -f $rtitle $rfilename -m samtools -m cutadapt -m fastqc -m star -m mirtrace 
-// //     """
-// // }
-
-// ////////////////////////////////////////////////////
-// //* --              Report                  -- *////
-// ////////////////////////////////////////////////////
+////////////////////////////////////////////////////
+//* --              Report                  -- *////
+////////////////////////////////////////////////////
 /*
  * STEP 9 - Multiqc
  */
