@@ -42,3 +42,5 @@ dependencies:
   - conda-forge::pygments
   - conda-forge::pigz
   - conda-forge::biopython
+  - conda-forge::venn
+  - conda-forge::seaborn
