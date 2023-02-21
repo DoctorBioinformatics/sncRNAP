@@ -3,7 +3,8 @@
 #2)DEseq:-FDR
 #3) check collapsed reads, i.e. should it be on fastq or bam files?
 #4) mirDeep... should it be integrated?
-5) validate pipeline
-6) novel process!
+5) merge adapter_db into DBs
+6) validate pipeline
+7) novel process!
   -streamlit
   
