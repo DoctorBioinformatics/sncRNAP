@@ -28,7 +28,7 @@ Run the following to conduct a group comparison analysis:
 ```javascript
 nextflow run sncRNAP \
 --genome human \
---paired false \
+--paired_samples false \
 --input_dir input/ \
 --output_dir ./Results \
 --layout ./layout.csv 
