@@ -390,7 +390,7 @@ process DESEQ {
     path layout from sncRNA_layout_channel
 
     output:
-    file 'C_vs_T.csv' into c_vs_t_csv
+    file "*_vs_*.csv" into c_vs_t_csv
     file "normalized_counts.csv" into sncRNA_normalized_counts_ch
     file '*.{pdf,xlsx}' into sncRNA_DESEQ_results
 
