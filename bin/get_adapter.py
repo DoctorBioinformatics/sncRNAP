@@ -5,18 +5,24 @@ from concurrent.futures import ProcessPoolExecutor
 
 def get_adapter(fastq,db):
     """A function to identify the most abundant adapter sequence in a fastq file."""
-    
+
+    # check if file is gzipped or not
+    if fastq.endswith('.gz'):
+        f = gzip.open(fastq, 'rt')
+    else:
+        f = open(fastq, 'r')
+
     # read fastq file
-    with gzip.open(fastq,'rt') as f:
+    with f:
         file=f.read()
         query=file.split('@')
         query=['@'+seq for seq in query][1:]
-        
+
         reads=[]
-        for i,s in enumerate(query):        
-          seq=s.split('\n')[1]
-          seq_flattened_query = ''.join([line.strip() for line in seq])#join lines
-          reads.append(seq_flattened_query)
+        for i,s in enumerate(query):
+            seq=s.split('\n')[1]
+            seq_flattened_query = ''.join([line.strip() for line in seq])#join lines
+            reads.append(seq_flattened_query)
 
     # read adapter sequence db
     with open(db) as d:
@@ -39,14 +45,14 @@ def get_adapter(fastq,db):
                     match[s] = 1
                 else:
                     match[s] +=1
-                    
+
     # report max counts for adapter sequence
     if len(match) == 0:
         print('no adapters found... exiting')
         # sys.exit(0)
     else:
         print(f'{max(match, key=match.get)}')
-    
+
 if __name__== '__main__':
     fastq=sys.argv[1]
     db=sys.argv[2]
