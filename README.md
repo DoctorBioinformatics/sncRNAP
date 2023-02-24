@@ -1,8 +1,7 @@
 
 # sncRNAP
 
-small non-coding RNA identification pipelines often lack the capacity to determine those that are differentially expressed in control vs treated samples.               
-We developed sncRNAP, a Nextflow  pipeline for the detection of novel as well as known differentially expressed ncRNA and miRNAs from sRNAseq datasets.
+sncRNAs are known to be involved in post-transcriptional regulation of gene expression. Over the past few years, a group of sncRNA identification tools have been developed but none has shown the capacity to fully profile sncRNA and determine those that are differentially expressed in control (C) vs treated (T) samples. Therefore, a tool that profiles sncRNAs and identifies differentially expressed ones in group comparisons is needed. To profile sncRNAs and to determine those that are differentially expressed in C vs T samples, we developed sncRNAP, a Nextflow pipeline for the profiling and identification of differentially abundant sncRNAs from small RNAseq data. sncRNAP can be used for group comparisons such as C and T groups. The pipeline successfully identifies sncRNAs that are upregulated in C vs T samples (log2fc > 2, padj value < 0.005). Additionally, the pipeline profiles sncRNAs in each sample. In this manner, sncRNAP shows the length distribution, sncRNA counts per sample, overlapping sncRNA in each sample, sncRNA expression per sample and per sncRNA class,  volcano plots for each sncRNA class and heatmap for the top differentially expressed sncRNAs. Lastly, sncRNAP reports quality scores as well as the fasta sequence for the top identified candidates in the experiment.
 
 ![Slide1](https://user-images.githubusercontent.com/70538424/220607066-d3e01d96-23cb-445f-8247-d5f09e7da5bf.jpg)
 
