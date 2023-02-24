@@ -568,7 +568,10 @@ plt.subplots_adjust(left=0.25, bottom=0.25)
 
 
 # create a list of the figures to be saved
-figures = [fig1, fig2, fig3, fig4] + venn_figs + [fig6, fig7, fig8, fig9, fig10, fig11, fig12, fig13, fig14, fig15] + volcano_list + [fig17]
+figures = [fig1, fig2, fig3, fig4] + [fig6, fig7, fig8, fig9, fig10, fig11, fig12, fig13, fig14, fig15] + volcano_list + [fig17]
+
+if venn_figs:
+    figures += venn_figs
 
 # create a PDF file using PdfPages
 with PdfPages('sncRNA_profiling.pdf') as pdf:
