@@ -279,20 +279,25 @@ classes = venn_df["sncRNA_class"].unique()
 sample_names = [col for col in venn_df.columns if col not in ["id", "sncRNA_class"]]
 sample_counts = len(sample_names)
 
-# iterate through each class and plot Venn diagrams for each class
-venn_figs = [] # define a list to store all venn diagrams
-for class1 in classes:
-    class1_data = venn_df[venn_df["sncRNA_class"] == class1].iloc[:, 1:]
-    sets = []
-    for sample in sample_names:
-        sets.append(set(class1_data.index[class1_data[sample] > 0]))
-    
-    venn_function = getattr(venn, f'venn{sample_counts}')
-    labels = venn.get_labels(sets, fill=['number'])
-    fig5, ax = venn_function(labels, names=sample_names)
-    ax.set_title(f"{class1} in {', '.join(sample_names)}")
-    
-    venn_figs.append(fig5)
+# check if number of samples is less than or equal to 4
+if sample_counts <= 4:
+    # iterate through each class and plot Venn diagrams for each class
+    venn_figs = [] # define a list to store all venn diagrams
+    for class1 in classes:
+        class1_data = venn_df[venn_df["sncRNA_class"] == class1].iloc[:, 1:]
+        sets = []
+        for sample in sample_names:
+            sets.append(set(class1_data.index[class1_data[sample] > 0]))
+
+        venn_function = getattr(venn, f'venn{sample_counts}')
+        labels = venn.get_labels(sets, fill=['number'])
+        fig5, ax = venn_function(labels, names=sample_names)
+        ax.set_title(f"{class1} in {', '.join(sample_names)}")
+
+        venn_figs.append(fig5)
+else:
+    print("Number of samples is greater than 4. Venn plot cannot be generated.")
+
 
 
 # #### expression profile per sample
@@ -427,6 +432,7 @@ for row in differentially_expressed[differentially_expressed.columns[0]]:
 
 # create a dataframe to store the result
 DE_classes_df = pd.DataFrame(list(counts.items()), columns=['ncRNA_class', 'Count'])
+DE_classes_df
 
 # Get the count data
 counts = DE_classes_df['Count'].tolist()
