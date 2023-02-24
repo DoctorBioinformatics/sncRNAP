@@ -296,6 +296,7 @@ if sample_counts <= 4:
 
         venn_figs.append(fig5)
 else:
+    venn_figs = []
     print("Number of samples is greater than 4. Venn plot cannot be generated.")
 
 
