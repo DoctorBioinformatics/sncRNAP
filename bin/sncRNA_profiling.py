@@ -98,9 +98,11 @@ pivot_table = grouped.pivot(index='ncRNA_class', columns='binned', values='Lengt
 # plot the heatmap and append the figure object to the list
 fig1 = plt.figure(figsize=(30,5))
 sns.heatmap(pivot_table, cmap='viridis',vmin=0, vmax=100, linewidth =1, square =True)
-plt.xlabel('ncRNA Length (binned)')
-plt.ylabel('ncRNA class')
-
+plt.xlabel('ncRNA Length (binned)', fontsize=12) 
+plt.ylabel('ncRNA class', fontsize=12) 
+plt.xticks(fontsize=10) 
+plt.yticks(fontsize=10) 
+plt.tight_layout() 
 
 # ### B) ncRNA count
 
@@ -365,10 +367,11 @@ for column_name, column_values in df.iloc[:, 4:].iteritems():
 binned_df = pd.concat(binned_values)
 
 # Plot each ncRNA class in a separate facet plot
-g = sns.FacetGrid(binned_df, col='ncRNA Class', col_wrap=3, height=4, sharex=False, sharey=False)
+g = sns.FacetGrid(binned_df, col='ncRNA Class', col_wrap=3, height=4, aspect=2, sharex=False, sharey=False, gridspec_kws={'wspace': 1, 'hspace': 1})
 g.map_dataframe(sns.histplot, x='Sample', hue='Expression Level', multiple='stack')
 g.set_axis_labels('Sample', 'Number of ncRNAs')
 g.add_legend(title='Expression Level', bbox_to_anchor=(1, 0.5), loc='right', borderaxespad=0., ncol=1, title_fontsize=14, labels=labels[::-1])
+g.set_xticklabels(rotation=90, fontsize=6)
 fig7 = g.fig
 
 
@@ -546,7 +549,7 @@ for ncRNA_class in ncRNA_classes:
 diff_exp_gene_values = differentially_expressed.iloc[:,4:]
 
 # Create the heatmap figure
-fig17, ax = plt.subplots(figsize=(10,6))
+fig17, ax = plt.subplots(figsize=(22,14))
 sns.heatmap(diff_exp_gene_values, xticklabels=diff_exp_gene_values.columns, yticklabels=differentially_expressed["id"], cmap="YlGnBu", annot=True, annot_kws={"size": 10}, ax=ax)
 
 # Add labels and title
