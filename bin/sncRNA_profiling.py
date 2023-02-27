@@ -403,7 +403,7 @@ plt.ylabel('Frequency')
 plt.title('Histogram of padj values for all ncRNAs')
 
 # determine DE value threshold nad plot percentage 
-counts = ((df['log2FoldChange'] > 1) | (df['log2FoldChange'] < -1)) & (df['padj'] < 0.05)
+counts = ((df['log2FoldChange'] > 1) | (df['log2FoldChange'] < -1)) & (df['padj'] < 0.005)
 count = counts.sum()
 
 # Plot the pie chart
@@ -423,7 +423,7 @@ ax1.set_title(str(count)+' DE genes')
 
 
 # count DE ncRNAs
-differentially_expressed = df[((df['log2FoldChange'] < -1) | (df['log2FoldChange'] > 1)) & (df['padj'] < 0.05)]
+differentially_expressed = df[((df['log2FoldChange'] < -1) | (df['log2FoldChange'] > 1)) & (df['padj'] < 0.005)]
 
 # create a dictionary to store the counts ncRNA lasses
 counts = {}
@@ -477,7 +477,7 @@ def plot_histogram(feature, grid):
 
 # Define a function to plot a pie chart for each ncRNA class
 def plot_piechart(data, **kwargs):
-    counts = ((data['log2FoldChange'] > 1) | (data['log2FoldChange'] < -1)) & (data['padj'] < 0.05)
+    counts = ((data['log2FoldChange'] > 1) | (data['log2FoldChange'] < -1)) & (data['padj'] < 0.005)
     count = counts.sum()
     labels = ['DE', 'Non-DE']
     sizes = [count, len(data) - count]
