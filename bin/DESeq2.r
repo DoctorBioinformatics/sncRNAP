@@ -105,9 +105,6 @@ categories$V2=  factor(categories$V2, levels=as.character(unique(categories$V2))
 base_level=levels(categories$V2)[1]
 level_to_compare=levels(categories$V2)[2]
 
-# Format RNA seq count data to fit the DESeqDataSetFromMatrix countData format
-RNAseq_data <- RNAseq_data[-1, ] 
-
 # Creat col_data to match DESeqDataSetFromMatrix colData 
 col_data=data.frame(categories$V2)
 colnames(col_data)=c("condition")
