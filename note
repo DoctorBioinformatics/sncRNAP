@@ -3,9 +3,11 @@
 #2)DEseq:-FDR
 #3) check collapsed reads, i.e. should it be on fastq or bam files?
 #4) mirDeep... should it be integrated?
-#5) README
-6) validate pipeline
+#5) validate pipeline
+6) README — change fig and txt
 7) merge adapter_db into DBs
-8) novel process!
+8) change the sncRNA length figure with the length from bam files instead of id lengths from reference
+9) add example datasets with example layout for paired and non-paired
+10) novel process!
   -streamlit
   
