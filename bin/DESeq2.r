@@ -3,18 +3,6 @@ if (!require("data.table")){
   install.packages("data.table", dependencies=TRUE)
   library("data.table")
 }
-if (!require("reshape2")) {
-  install.packages("reshape2", dependencies=TRUE)
-  library("reshape2")
-}
-if (!require("writexl")) {
-  install.packages("writexl", dependencies=TRUE)
-  library("writexl")
-}
-if (!require("readxl")) {
-  install.packages("readxl", dependencies=TRUE)
-  library("readxl")
-}
 if (!require("dplyr")) {
   install.packages("dplyr", dependencies = TRUE, repos='http://cloud.r-project.org/')
 }
@@ -31,13 +19,6 @@ suppressMessages(library(ggrepel))
 
 suppressMessages(library(RColorBrewer))
 
-suppressMessages(library(EnhancedVolcano))
-
-suppressMessages(library(reshape2))
-
-suppressMessages(library(writexl))
-
-suppressMessages(library(readxl))
 args <- commandArgs(trailingOnly = TRUE)
 #arg 1 - input file name
 input <- as.character(args[3:(length(args))])
