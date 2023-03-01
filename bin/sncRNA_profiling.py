@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[412]:
+# In[77]:
 
 
 import sys
@@ -17,7 +17,7 @@ warnings.filterwarnings("ignore")
 
 # ### Read ncRNA db 
 
-# In[413]:
+# In[78]:
 
 
 # open other ncRNA db file
@@ -29,9 +29,9 @@ with open(fasta, "r") as file1:
 lines = content1.splitlines()
 
 
-# ### A) ncRNA length
+# ### A) ncRNA reference length
 
-# In[415]:
+# In[79]:
 
 
 # iterate over ids and extract ncRNA classes
@@ -62,7 +62,7 @@ length_df = length_df.dropna()
 length_df.loc[length_df['ncRNA_id'].str.contains('tRNA'), 'Length'] = length_df.loc[length_df['ncRNA_id'].str.contains('tRNA'), 'Length'] - 100
 
 
-# In[416]:
+# In[80]:
 
 
 # create an empty list to store the results
@@ -81,7 +81,7 @@ for i, row in length_df.iterrows():
 data_new = pd.DataFrame(data, columns=['ncRNA_class', 'Length'])
 data_new
 # remove length values > 500
-data_new = data_new[data_new['Length'] <= 500]
+data_new = data_new[data_new['Length'] <= 200]
 
 # create a range of values to use for the bins
 bins = range(0, int(data_new['Length'].max())+5, 5)
@@ -104,9 +104,10 @@ plt.xticks(fontsize=10)
 plt.yticks(fontsize=10) 
 plt.tight_layout() 
 
+
 # ### B) ncRNA count
 
-# In[417]:
+# In[81]:
 
 
 # create a dictionary to store the counts ncRNA lasses
@@ -136,7 +137,7 @@ for line in lines:
 result_df = pd.DataFrame(list(counts.items()), columns=['ncRNA_class', 'Count'])
 
 
-# In[418]:
+# In[82]:
 
 
 # plot gene count
@@ -169,7 +170,7 @@ for i, v in enumerate(bar_counts):
 
 # ### C) ncRNA counts per sample
 
-# In[419]:
+# In[83]:
 
 
 # Read CSV file
@@ -183,7 +184,7 @@ df = df.rename(columns={df.columns[0]: 'id'})
 
 # #### change id names to id_class
 
-# In[420]:
+# In[84]:
 
 
 # Iterate over the ids 
@@ -198,7 +199,7 @@ for i, row in enumerate(df['id']):
         
     if "MIMA" in row:
         ncRNA_class = 'miRNA'
-        new_string = row.split('_')[1]
+        new_string = row.split('_')[0]
         new_id = new_string + "_" + ncRNA_class
         df['id'] = df['id'].replace({row: new_id})
     
@@ -212,7 +213,7 @@ df = df[~df['id'].str.contains('Mt')]
 
 # #### check ncRNA counts across samples
 
-# In[421]:
+# In[85]:
 
 
 # iterate over column samples and find ids that with values !=0 
@@ -258,7 +259,7 @@ ax.legend(title='Samples', frameon=False, loc='center left', bbox_to_anchor=(1.0
 
 # #### venn diagram per ncRNA 
 
-# In[422]:
+# In[86]:
 
 
 # create a venn df and convert values to 0/1
@@ -302,10 +303,9 @@ else:
     print("Number of samples is greater than 4. Venn plot cannot be generated.")
 
 
-
 # #### expression profile per sample
 
-# In[423]:
+# In[87]:
 
 
 # Create bins for expression values
@@ -343,7 +343,7 @@ ax.legend(title="Expression (RPM)",loc="center left", bbox_to_anchor=(1.0, 0.5))
 
 # #### expression profile per ncRNA class
 
-# In[424]:
+# In[88]:
 
 
 # Create bins for expression values
@@ -377,7 +377,7 @@ fig7 = g.fig
 
 # ### D) DE ncRNAs
 
-# In[425]:
+# In[17]:
 
 
 df.info()
@@ -385,7 +385,7 @@ df.info()
 
 # #### DE gene counts
 
-# In[426]:
+# In[89]:
 
 
 # plot log2fc distribution
@@ -419,7 +419,7 @@ ax1.set_title(str(count)+' DE genes')
 
 # #### DE gene counts per class
 
-# In[427]:
+# In[91]:
 
 
 # count DE ncRNAs
@@ -465,7 +465,7 @@ plt.title("Number of DE genes")
 
 # ####  padj, log2fc, and DE gene % for each class
 
-# In[428]:
+# In[92]:
 
 
 # Split the id column to extract ncRNA class
@@ -502,7 +502,7 @@ fig15 = g3.fig
 
 # #### volcano plot per class
 
-# In[429]:
+# In[93]:
 
 
 # Volcano plot
@@ -534,22 +534,21 @@ for ncRNA_class in ncRNA_classes:
     # Filter the data for the current ncRNA class
     filtered_df = df[df["id"].apply(lambda x: x.split("_")[1] == ncRNA_class)]
     de_genes_class = differentially_expressed[differentially_expressed["id"].apply(lambda x: x.split("_")[1] == ncRNA_class)]
-    fig16, ax = plt.subplots(figsize=(10, 10))
+    fig16, ax = plt.subplots(figsize=(15, 5))
     plot_volcano(filtered_df, de_genes_class, ncRNA_class, ax)
     volcano_list.append(fig16)
-    
 
 
 # #### heatmap for DE genes
 
-# In[430]:
+# In[95]:
 
 
 # Subset the differentially expressed genes
 diff_exp_gene_values = differentially_expressed.iloc[:,4:]
 
 # Create the heatmap figure
-fig17, ax = plt.subplots(figsize=(22,14))
+fig17, ax = plt.subplots(figsize=(30,30))
 sns.heatmap(diff_exp_gene_values, xticklabels=diff_exp_gene_values.columns, yticklabels=differentially_expressed["id"], cmap="YlGnBu", annot=True, annot_kws={"size": 10}, ax=ax)
 
 # Add labels and title
@@ -566,13 +565,58 @@ plt.subplots_adjust(left=0.25, bottom=0.25)
 # plt.show()
 
 
+# ### Count sncRNA groups
+
+# In[96]:
+
+
+# Create a function to extract the family name from the id column
+def get_family_name(row):
+    if "tRNA" in row["id"]:
+        return row["id"].split("-")[1].split("_")[0]
+    elif "miRNA" in row["id"]:
+        return row["id"].split("_")[0]
+
+# Apply the function to create a new column for family names
+differentially_expressed["family"] = differentially_expressed.apply(get_family_name, axis=1)
+
+# Group the dataframe by family and calculate the count of each family
+family_counts = differentially_expressed.groupby("family").size().reset_index(name="count")
+
+# Sort the families based on the count in descending order
+family_counts = family_counts.sort_values("count", ascending=True)
+
+# Create a horizontal barplot using the family names as the y-axis and the counts as the x-axis
+fig18, ax = plt.subplots(figsize=(10, 6))
+bars = ax.barh(family_counts["family"], family_counts["count"])
+
+# Show the counts on each bar
+for bar in bars:
+    width = bar.get_width()
+    ax.annotate(f'{width}', xy=(width, bar.get_y() + bar.get_height() / 2), 
+                xytext=(3, 0), textcoords="offset points", ha='left', va='center')
+
+# Set the plot title and labels
+ax.set_yticklabels(family_counts["family"])
+ax.set_xlabel("Count")
+ax.set_ylabel("Family")
+ax.set_title("Count of sncRNA groups")
+
+# Set the y-axis limits to show all the family names
+ax.set_ylim([-0.5, len(family_counts)-0.5])
+
+# Set the x-axis ticks to be multiples of 5
+max_count = max(family_counts["count"])
+ax.set_xticks(range(0, max_count+1, 5))
+
+
 # ### Export figs as combined PDF
 
-# In[431]:
+# In[97]:
 
 
 # create a list of the figures to be saved
-figures = [fig1, fig2, fig3, fig4] + [fig6, fig7, fig8, fig9, fig10, fig11, fig12, fig13, fig14, fig15] + volcano_list + [fig17]
+figures = [fig1, fig2, fig3, fig4] + [fig6, fig7, fig8, fig9, fig10, fig11, fig12, fig13, fig14, fig15] + volcano_list + [fig17,fig18]
 
 if venn_figs:
     figures += venn_figs
@@ -587,28 +631,22 @@ with PdfPages('sncRNA_profiling.pdf') as pdf:
 
 # #### log2fc values for top candidates
 
-# In[432]:
+# In[98]:
 
 
 differentially_expressed
 
 
-# In[433]:
+# In[99]:
 
 
 # save to csv 
 differentially_expressed.to_csv('de_genes.csv', index=False)
 
 
-# In[434]:
-
-
-differentially_expressed
-
-
 # #### ncRNA sequence for top candidates
 
-# In[445]:
+# In[100]:
 
 
 # extract the 'id' column as a list
