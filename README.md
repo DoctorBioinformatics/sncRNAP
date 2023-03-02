@@ -20,7 +20,7 @@ Run the below code to download sncRNAP:
 ```bash
 git clone https://github.com/hesham123457887/sncRNAP.git
 chmod 747 sncRNAP/bin/**
-'''
+```
 
 Run the below code to create a conda environment and install the required tools for the pipeline:
 
