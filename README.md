@@ -34,9 +34,19 @@ Run the following to conduct a group comparison analysis:
 nextflow run sncRNAP \
 --genome human \
 --paired_samples FALSE \
---input_dir input/ \
+--input_dir data/ \
 --output_dir ./Results \
---layout ./layout.csv 
+--layout layout/Layout.csv 
+```
+
+Run the following to conduct a paired group comparison analysis:
+```javascript
+nextflow run sncRNAP \
+--genome human \
+--paired_samples TRUE \
+--input_dir data/ \
+--output_dir ./Results \
+--layout layout/Layout_paired_samples.csv 
 ```
 
 ## License
