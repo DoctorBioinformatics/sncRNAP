@@ -15,10 +15,16 @@ sncRNAs are known to be involved in post-transcriptional regulation of gene expr
 
 ## Installation
 
-Run the below code to create a conda environment and install the required tools for the pipeline.
+Run the below code to download sncRNAP:
 
 ```bash
 git clone https://github.com/hesham123457887/sncRNAP.git
+chmod 747 sncRNAP/bin/**
+'''
+
+Run the below code to create a conda environment and install the required tools for the pipeline:
+
+```bash
 conda env create -f sncRNAP/environment.yml
 conda activate sncRNAP
 ```
@@ -27,12 +33,11 @@ Run the following to conduct a group comparison analysis:
 ```javascript
 nextflow run sncRNAP \
 --genome human \
---paired_samples false \
+--paired_samples FALSE \
 --input_dir input/ \
 --output_dir ./Results \
 --layout ./layout.csv 
 ```
-
 
 ## License
 
