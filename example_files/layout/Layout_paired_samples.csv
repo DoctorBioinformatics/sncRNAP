@@ -1,0 +1,6 @@
+WT_1.fastq.gz,WT,Subject1
+WT_2.fastq.gz,WT,Subject2
+WT_3.fastq.gz,WT,Subject3
+Mutant_1.fastq.gz,FUS_KO,Subject1
+Mutant_2.fastq.gz,FUS_KO,Subject2
+Mutant_3.fastq.gz,FUS_KO,Subject3
