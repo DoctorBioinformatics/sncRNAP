@@ -9,7 +9,7 @@ sncRNAs are known to be involved in post-transcriptional regulation of gene expr
 
 - [Hesham Gibriel, PhD](https://github.com/hesham123457887)
 
-- [Sharada Baindoor](https://github.com/@sharadabaindoor1995)
+- [Sharada Baindoor](https://github.com/SBaindoor)
 
 
 
