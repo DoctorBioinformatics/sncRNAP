@@ -135,7 +135,7 @@ down <- (resultsDF[!is.na(resultsDF$pvalue) & resultsDF$pvalue <= 0.05 &
                      resultsDF$log2FoldChange <= 0, ]) 
 write_to_file=cbind(resultsDF[,1],resultsDF[ , c("log2FoldChange", "pvalue", "padj")] , resultsDF[,8:ncol(resultsDF)])
 names(write_to_file)[names(write_to_file) == 'rownames(results.DF)'] <- 'ID'
-file_name=paste(base_level,"_vs_",level_to_compare,".csv",sep="")
+file_name=paste(level_to_compare,"_vs_",base_level,".csv",sep="")
 write.csv(write_to_file,file=file_name)
 
 
@@ -158,7 +158,7 @@ for(i in 1:ncol(RPM)){
 inlog.density.ymax <- max.density*1.2 # Get y max and add 20% 
 width <- 6
 height <- 6
-density_plot_name=paste0(base_level,"_vs_",level_to_compare,"_density_plot.pdf", sep="")
+density_plot_name=paste0(level_to_compare,"_vs_",base_level,"_density_plot.pdf", sep="")
 pdf(density_plot_name, height=height, width=width)
 density_plot=plot(density(inlog[,1]),
                   #ylim=c(0,0.2), 
@@ -187,7 +187,7 @@ sampleDists <- data.frame(sampleDists)
 #par(mar=c(6,4,4,5)+0.1) 
 width <- 6
 height <- 6
-distance_matrix_plot_name=paste0(base_level,"_vs_",level_to_compare,"_distance_matrix_plot.pdf", sep="")
+distance_matrix_plot_name=paste0(level_to_compare,"_vs_",base_level,"_distance_matrix_plot.pdf", sep="")
 
 
 pdf(distance_matrix_plot_name, height=height, width=width)
@@ -222,6 +222,6 @@ pca_plot=ggplot(gg.df, aes(PC1, PC2, color = Group, shape = Group)) +
 
 width <- 6
 height <- 6
-pca_plot_name=paste0(base_level,"_vs_",level_to_compare,"_PCA_plot.pdf", sep="")
+pca_plot_name=paste0(level_to_compare,"_vs_",base_level,"_PCA_plot.pdf", sep="")
 ggsave(pca_plot_name, pca_plot, width = width, height = height)
 
