@@ -71,7 +71,7 @@ if (!is.null(nr_keep) & length(nr_keep)>0 & nr_keep > 0){
   data<-data[!row_sub,]
 }
 
-write.csv(data,file="normalized_counts.csv")
+write.csv(data,file="raw_counts.csv")
 RNAseq_data=data
 
 
